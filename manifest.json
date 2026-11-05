@@ -1,0 +1,11 @@
+{
+	"id": "recursive-fold",
+	"name": "Recursive Fold",
+	"version": "1.0.0",
+	"minAppVersion": "1.2.3",
+	"description": "Fold or unfold a heading or list item together with everything nested under it, with a modifier-click on its fold arrow.",
+	"author": "rogerfan48",
+	"authorUrl": "https://github.com/rogerfan48",
+	"fundingUrl": "https://buymeacoffee.com/rogerfan48",
+	"isDesktopOnly": false
+}
