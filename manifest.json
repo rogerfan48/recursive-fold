@@ -3,7 +3,7 @@
 	"name": "Recursive Fold",
 	"version": "1.0.0",
 	"minAppVersion": "1.2.3",
-	"description": "Fold or unfold a heading or list item together with everything nested under it, with a modifier-click on its fold arrow.",
+	"description": "Expand or collapse a heading, list, folder, tag or bookmark group together with everything nested under it in one modifier-click, instead of one level at a time.",
 	"author": "rogerfan48",
 	"authorUrl": "https://github.com/rogerfan48",
 	"fundingUrl": "https://buymeacoffee.com/rogerfan48",

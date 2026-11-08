@@ -18,21 +18,37 @@ interface FoldableMode {
   applyFoldInfo(info: FoldInfo): void;
 }
 
-export function foldInfoOf(view: MarkdownView): FoldInfo {
-  return (view.currentMode as unknown as FoldableMode).getFoldInfo();
+export interface FoldState {
+  mode: FoldableMode;
+  save(): void;
+}
+
+// Null when Obsidian no longer has these methods, so callers fall back
+// to its own behavior instead of failing mid-click.
+export function foldStateOf(view: MarkdownView): FoldState | null {
+  const mode = view.currentMode as unknown as Partial<FoldableMode>;
+  const { onMarkdownFold } = view as unknown as { onMarkdownFold?: (this: MarkdownView) => void };
+  if (typeof mode.getFoldInfo !== "function" || typeof mode.applyFoldInfo !== "function") return null;
+  if (typeof onMarkdownFold !== "function") return null;
+  return {
+    mode: mode as FoldableMode,
+    save: () => {
+      onMarkdownFold.call(view);
+    },
+  };
 }
 
 // subtree[0] is the toggled range; the rest lie inside it.
-export function toggleSubtree(view: MarkdownView, subtree: LineRange[]) {
+export function toggleSubtree(state: FoldState, subtree: LineRange[]) {
   const [target] = subtree;
-  const mode = view.currentMode as unknown as FoldableMode;
+  const { mode } = state;
   const info = mode.getFoldInfo();
   const inside = (range: LineRange) => range.from >= target.from && range.from <= target.to;
   const wasFolded = info.folds.some((fold) => fold.from === target.from);
   const folds = info.folds.filter((fold) => !inside(fold));
   if (!wasFolded) folds.push(...subtree);
   mode.applyFoldInfo({ folds, lines: info.lines });
-  (view as unknown as { onMarkdownFold(): void }).onMarkdownFold();
+  state.save();
 }
 
 export function innermostAt(ranges: LineRange[], line: number): LineRange | undefined {

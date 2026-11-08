@@ -8,14 +8,18 @@ import {
   Setting,
   SettingDefinitionItem,
   TFile,
+  View,
 } from "obsidian";
 
 import * as editing from "./src/editing-view";
-import { foldInfoOf, innermostAt, LineRange, toggleSubtree } from "./src/folds";
+import { FoldState, foldStateOf, innermostAt, LineRange, toggleSubtree } from "./src/folds";
+import { PANE_ARROWS, planPaneToggle } from "./src/panes";
 import * as reading from "./src/reading-view";
 import { ClickModifier, DEFAULT_SETTINGS, RecursiveFoldSettings } from "./src/settings";
 
-const FOLD_ARROWS = ".heading-collapse-indicator, li > .list-collapse-indicator, .cm-fold-indicator";
+const NOTE_ARROWS = ".heading-collapse-indicator, li > .list-collapse-indicator, .cm-fold-indicator";
+
+type Toggle = () => void;
 
 export default class RecursiveFoldPlugin extends Plugin {
   declare settings: RecursiveFoldSettings;
@@ -38,9 +42,9 @@ export default class RecursiveFoldPlugin extends Plugin {
       name: "Toggle fold recursively",
       checkCallback: (checking) => {
         const view = this.app.workspace.getActiveViewOfType(MarkdownView);
-        const subtree = view?.file ? this.subtreeAtFocus(view, view.file) : [];
-        if (!view || subtree.length === 0) return false;
-        if (!checking) toggleSubtree(view, subtree);
+        const toggle = view && this.planNoteToggle(view);
+        if (!toggle) return false;
+        if (!checking) toggle();
         return true;
       },
     });
@@ -59,51 +63,61 @@ export default class RecursiveFoldPlugin extends Plugin {
   }
 
   // Runs in the capture phase so it gets the click before Obsidian's own
-  // single-level toggle, which bails on an event that is already handled.
+  // single-level toggle. Anything it cannot plan is left to Obsidian.
   private onClick = (evt: MouseEvent) => {
     const { modifier } = this.settings;
     if (modifier === "off" || evt.button !== 0 || !Keymap.isModifier(evt, modifier)) return;
     if (!evt.targetNode?.instanceOf(Element)) return;
-    const arrow = evt.targetNode.closest<HTMLElement>(FOLD_ARROWS);
+    const arrow = evt.targetNode.closest<HTMLElement>(`${NOTE_ARROWS}, ${PANE_ARROWS}`);
     const view = arrow && this.viewContaining(arrow);
-    if (!arrow || !view?.file) return;
+    if (!arrow || !view) return;
 
-    const subtree = this.subtreeAtArrow(view, view.file, arrow);
-    if (subtree.length === 0) return;
+    const toggle = view instanceof MarkdownView ? this.planNoteToggle(view, arrow) : planPaneToggle(view, arrow);
+    if (!toggle) return;
     evt.preventDefault();
     evt.stopPropagation();
-    toggleSubtree(view, subtree);
+    toggle();
   };
 
-  private viewContaining(el: HTMLElement): MarkdownView | null {
-    for (const leaf of this.app.workspace.getLeavesOfType("markdown")) {
-      if (leaf.view instanceof MarkdownView && leaf.view.containerEl.contains(el)) return leaf.view;
-    }
-    return null;
+  private viewContaining(el: HTMLElement): View | null {
+    let found: View | null = null;
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      if (!found && leaf.view.containerEl.contains(el)) found = leaf.view;
+    });
+    return found;
   }
 
-  private subtreeAtArrow(view: MarkdownView, file: TFile, arrow: HTMLElement): LineRange[] {
+  private planNoteToggle(view: MarkdownView, arrow?: HTMLElement): Toggle | null {
+    const state = foldStateOf(view);
+    if (!state || !view.file || (arrow && !arrow.matches(NOTE_ARROWS))) return null;
+    const subtree = arrow
+      ? this.subtreeAtArrow(view, view.file, state, arrow)
+      : this.subtreeAtFocus(view, view.file, state);
+    return subtree.length > 0 ? () => toggleSubtree(state, subtree) : null;
+  }
+
+  private subtreeAtArrow(view: MarkdownView, file: TFile, state: FoldState, arrow: HTMLElement): LineRange[] {
     if (arrow.hasClass("cm-fold-indicator")) {
       const cm = view.getMode() === "source" ? editing.editorOf(view) : undefined;
       return cm ? editing.subtreeAt(cm.state, editing.lineOfIndicator(cm, arrow)) : [];
     }
     if (view.getMode() !== "preview") return [];
     const line = reading.lineOfIndicator(arrow, file.path);
-    return line === null ? [] : reading.subtreeAt(this.outlineRanges(view, file), line);
+    return line === null ? [] : reading.subtreeAt(this.outlineRanges(file, state), line);
   }
 
-  private subtreeAtFocus(view: MarkdownView, file: TFile): LineRange[] {
+  private subtreeAtFocus(view: MarkdownView, file: TFile, state: FoldState): LineRange[] {
     if (view.getMode() === "source") {
       const cm = editing.editorOf(view);
       return cm ? editing.innermostSubtree(cm.state, view.editor.getCursor().line) : [];
     }
-    const ranges = this.outlineRanges(view, file);
+    const ranges = this.outlineRanges(file, state);
     const target = innermostAt(ranges, Math.floor(view.previewMode.getScroll()));
     return target ? reading.subtreeAt(ranges, target.from) : [];
   }
 
-  private outlineRanges(view: MarkdownView, file: TFile): LineRange[] {
-    return reading.outlineRanges(this.app.metadataCache.getFileCache(file), foldInfoOf(view).lines);
+  private outlineRanges(file: TFile, state: FoldState): LineRange[] {
+    return reading.outlineRanges(this.app.metadataCache.getFileCache(file), state.mode.getFoldInfo().lines);
   }
 }
 
@@ -117,7 +131,7 @@ class RecursiveFoldSettingTab extends PluginSettingTab {
 
   private readonly modifierSetting = {
     name: "Modifier key",
-    desc: "Hold it while clicking a fold arrow to fold or unfold everything nested under that heading or list item.",
+    desc: "Hold it while clicking a fold arrow to fold or unfold everything nested under it.",
     options: {
       Mod: Platform.isMacOS ? "Cmd-click" : "Ctrl-click",
       Alt: Platform.isMacOS ? "Option-click" : "Alt-click",

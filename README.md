@@ -1,24 +1,45 @@
 # Recursive Fold
 
-An [Obsidian](https://obsidian.md) plugin that folds or unfolds a heading or list item together with
-everything nested under it, in one click.
+Expand or collapse an entire branch in [Obsidian](https://obsidian.md) with one click, instead of
+one level at a time.
+
+Obsidian's fold arrows toggle a single level. Reaching a heading five levels deep takes five
+clicks, and collapsing a section keeps every level inside it as it was, so tidying up means closing
+each one separately. Recursive Fold adds a modifier-click: `Cmd`-click (macOS) or `Ctrl`-click
+(Windows, Linux) any fold arrow, and the item opens or closes together with everything nested
+under it.
+
+![Modifier-clicking fold arrows in a note and in the Outline pane to expand and collapse whole branches](https://github.com/rogerfan48/recursive-fold/raw/main/assets/demo.gif)
+
+## Where it works
+
+| Location | What folds |
+| --- | --- |
+| Notes, in Reading view, Live Preview and Source mode | Headings and list items |
+| File explorer | Folders |
+| Bookmarks | Bookmark groups |
+| Tags | Nested tags |
+| Outline | Headings |
 
 ## Usage
 
-Hold `Cmd` (macOS) or `Ctrl` (Windows, Linux) and click a fold arrow:
+| Action | Result |
+| --- | --- |
+| Modifier-click a collapsed arrow | Expands the item and every level beneath it. |
+| Modifier-click an expanded arrow | Collapses the item and every level beneath it. |
+| **Toggle fold recursively** command | The same, for the section at the cursor, or at the top of the page in Reading view. Bind it under **Settings → Hotkeys**. |
 
-- **Folded item:** it and everything inside unfold.
-- **Unfolded item:** it and everything inside fold.
+Plain clicks keep Obsidian's single-level behavior. Folds in notes are saved like any other fold
+and carry over between Reading view and the editor.
 
-Works for headings and lists in Reading view, Live Preview and Source mode. A plain click still
-toggles a single level.
-
-For the keyboard, assign a hotkey to **Toggle fold recursively**. It acts on the section at the
-cursor, or at the top of the page in Reading view.
+**Tip:** to open just the next level, modifier-click to collapse the whole branch, then plain-click
+the same arrow. Its children appear with everything beneath them still folded.
 
 ## Settings
 
-**Modifier key:** `Cmd`/`Ctrl` (default), `Option`/`Alt`, `Shift`, or off.
+| Setting | Default | Options |
+| --- | --- | --- |
+| Modifier key | `Cmd` on macOS, `Ctrl` elsewhere | `Option`/`Alt`, `Shift`, or off |
 
 ## Installation
 
@@ -34,12 +55,12 @@ Download `main.js` and `manifest.json` from the
 [latest release](https://github.com/rogerfan48/recursive-fold/releases/latest) and place them in
 `<your vault>/.obsidian/plugins/recursive-fold/`, then reload Obsidian and enable the plugin.
 
-## Notes
+## Limitations
 
-- Embedded notes, hover previews and Canvas cards keep the default single-level behavior.
+- Embedded notes, hover previews and Canvas cards are not supported.
 - Mobile devices have no modifier keys; use the command instead.
-- The plugin relies on parts of Obsidian outside its public API, so a future Obsidian update may
-  break modifier-clicks until the plugin catches up.
+- The plugin builds on parts of Obsidian outside its public API. If an update changes them,
+  modifier-clicks fall back to a single-level toggle until the plugin is updated.
 
 ## Related
 

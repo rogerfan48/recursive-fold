@@ -1,7 +1,7 @@
 {
 	"name": "recursive-fold",
 	"version": "1.0.0",
-	"description": "Fold or unfold a heading or list item together with everything nested under it.",
+	"description": "Expand or collapse a heading, list, folder, tag or bookmark group together with everything nested under it in one modifier-click, instead of one level at a time.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",

@@ -55,6 +55,7 @@ Run `npm run build` and `npm run lint` before opening a pull request.
 | `src/folds.ts` | Reads and writes Obsidian's per-note fold state, and toggles a subtree. |
 | `src/reading-view.ts` | Maps a Reading view fold arrow to its source line, and builds the outline from the metadata cache. |
 | `src/editing-view.ts` | Maps an editor fold arrow to its line, and asks CodeMirror for the fold ranges inside it. |
+| `src/panes.ts` | Folds a subtree in the File explorer, Bookmarks, Tags and Outline panes. |
 
 ## Style notes
 
